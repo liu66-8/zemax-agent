@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *.pyc
 *.so
+*.egg
 
 # Virtual environments
 .venv/
@@ -21,14 +22,31 @@ build/
 
 # Testing
 .pytest_cache/
+.coverage
+htmlcov/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Project-specific
 *.zmx
 checkpoints/
 logs/
 reports/
+workspace/
 .trae/
+
+# Node/Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Rust/Tauri
+frontend/src-tauri/target/

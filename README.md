@@ -1,137 +1,121 @@
-# Zemax-Agent 智能光学设计系统
+# Zemax Agent — 光学工程工作台
 
-基于 LLM 大语言模型驱动的多智能体光学设计系统，通过 Zemax ZOS-API 实现自动化光学设计工作流、分析与优化。
+面向光学工程全生命周期的 AI 原生工作平台。以项目为核心载体，统一管理设计数据、分析结果、版本记录和知识资产，使 AI 能够深度参与光学研发过程。
 
-## 核心功能
+## 技术栈
 
-系统包含六大核心模块：
-
-| 模块 | 说明 |
-|------|------|
-| **API 封装层** (`api/`) | 封装 Zemax OpticStudio 的 ZOS-API，管理连接生命周期、命令执行与数据获取 |
-| **Agent 决策引擎** (`agent/`) | 基于 LLM 的多智能体编排核心，管理 Agent 行为、工具选择与迭代设计工作流 |
-| **光学计算与诊断** (`optics/`) | 实现光学性能指标计算、像差分析、MTF/PSF 计算与系统级光学诊断 |
-| **知识约束** (`knowledge/`) | 编码光学设计原理、约束条件与最佳实践，为 Agent 决策提供结构化知识支持 |
-| **报告生成** (`report/`) | 基于 Jinja2 模板生成结构化光学设计报告，包含性能总结、分析图表与设计文档 |
-| **会话管理** (`session/`) | 管理设计会话、检查点持久化、状态恢复与长运行工作流跟踪 |
+| 层级 | 技术 | 用途 |
+|------|------|------|
+| **ui** | Tauri 2.x + React 19.x + TypeScript | 桌面应用壳，工程工作台多面板界面 |
+| **core** | Python 3.12+ | 核心业务逻辑（Agent / 项目管理 / 任务调度 / 版本管理） |
+| **tools** | Pydantic v2 | 标准化工具接口，AI 通过 Tool Interface 调用 Zemax |
+| **zos** | Python.NET → ZOS-API | Zemax OpticStudio 自动化控制 |
+| **llm** | LangGraph + LangChain | Agent 状态图编排与 Human-in-the-loop |
+| **storage** | SQLite + Qdrant | 项目元数据 / 知识向量检索 |
+| **ipc** | Tauri sidecar stdin/stdout JSON | 前后端进程间通信 |
 
 ## 系统架构
 
 ```
-┌─────────────────────────────────────┐
-│           CLI Entry Point           │
-├─────────────────────────────────────┤
-│        Agent 决策引擎 (agent/)       │  ← LLM 推理与任务编排
-├─────────────────────────────────────┤
-│   API 封装层 (api/)  │ 工具库 (tools/)│ ← 与 Zemax 交互
-├─────────────────────────────────────┤
-│  光学计算 (optics/) │ 知识库 (knowledge/)│ ← 领域专用层
-├─────────────────────────────────────┤
-│   会话管理 (session/) │ 配置 (config/)  │ ← 基础设施层
-└─────────────────────────────────────┘
+┌────────────────────────────────────────────────────┐
+│           Tauri Desktop (React + TS)               │
+│  Project Explorer │ Design │ Analysis │ AI Chat   │
+└──────────────────────┬─────────────────────────────┘
+                       │ Tauri IPC (sidecar JSON)
+┌──────────────────────┴─────────────────────────────┐
+│              Python Core Layer                     │
+│  AgentOrchestrator → Tool Registry → ZOS Dispatcher│
+│  Project Manager │ Version Manager │ Knowledge Base│
+└──────────────────────┬─────────────────────────────┘
+                       │ Python.NET / CLR
+┌──────────────────────┴─────────────────────────────┐
+│            Zemax OpticStudio (ZOS-API)             │
+└────────────────────────────────────────────────────┘
 ```
 
-四层架构设计：
-
-1. **接入层** — CLI 入口与外部接口
-2. **决策层** — LLM 驱动的 Agent 智能体引擎
-3. **领域层** — 光学计算、分析诊断与专业知识库
-4. **基础层** — 配置管理、会话持久化与状态恢复
-
-## 安装指南
+## 快速入门
 
 ### 环境要求
 
-- **Python** >= 3.10
-- **Zemax OpticStudio** (提供 ZOS-API 支持)
-- **LLM API Key** (如 OpenAI API Key)
+- Windows 10/11
+- Python 3.10+
+- Zemax OpticStudio (licensed)
+- Node.js 20+ (前端开发)
+- Rust (Tauri 编译)
 
-### 从源码安装
+### 安装
 
 ```bash
-git clone <repository-url>
+# 克隆仓库
+git clone <repo-url>
 cd zemax-agent
-pip install -e .
-```
 
-### 安装开发依赖
+# 创建虚拟环境
+python -m venv .venv
+.venv\Scripts\activate
 
-```bash
+# 安装依赖
 pip install -e ".[dev]"
+
+# 安装 pre-commit hooks
+pre-commit install
+
+# 安装前端依赖
+cd frontend
+npm install
 ```
 
-## 快速开始
+### 配置
+
+复制并编辑配置文件：
 
 ```bash
-# 启动 zemax-agent
-zemax-agent
+cp config.example.yaml config.yaml
+# 编辑 config.yaml 填入 LLM API Key 和 Zemax 连接参数
 ```
 
-在 Python 中使用：
+### 运行
 
-```python
-from zemax_agent import __version__
+```bash
+# 开发模式 — 启动 Python 核心
+python -m zemax_agent.core
 
-print(f"Zemax-Agent version: {__version__}")
+# 开发模式 — 启动 Tauri 前端
+cd frontend
+npm run tauri dev
+
+# 生产构建
+cd frontend
+npm run tauri build
 ```
 
-## 依赖要求
+### 运行测试
 
-### 核心依赖
+```bash
+# 后端测试
+pytest tests/ -v
 
-- pydantic >= 2.0 — 配置与数据校验
-- pyyaml >= 6.0 — YAML 配置文件解析
-- numpy >= 1.24 — 数值计算
-- pandas >= 2.0 — 数据处理与分析
-- matplotlib >= 3.7 — 图表可视化
-- openai >= 1.0 — LLM 客户端
-- jinja2 >= 3.1 — 报告模板引擎
+# 带覆盖率
+pytest tests/ --cov=zemax_agent --cov-report=html
+```
 
-### 开发依赖
-
-- pytest >= 7.0
-- pytest-asyncio >= 0.21
-- pytest-cov >= 4.0
-- ruff >= 0.1
-- mypy >= 1.0
-
-### 外部依赖
-
-- Zemax OpticStudio（支持 ZOS-API）
-- LLM API Key（如 OpenAI）
-
-## 项目结构
+## 项目目录结构
 
 ```
 zemax-agent/
 ├── src/zemax_agent/
-│   ├── __init__.py          # 包入口，版本号
-│   ├── cli.py               # CLI 命令行入口
-│   ├── config/              # 配置管理模块
-│   ├── api/                 # ZOS-API 封装层
-│   ├── tools/               # 工具函数库
-│   ├── knowledge/           # 光学知识约束
-│   ├── agent/               # Agent 决策引擎
-│   ├── optics/              # 光学计算与诊断
-│   ├── report/              # 报告生成模块
-│   ├── session/             # 会话与状态管理
-│   └── llm/                 # LLM 客户端
-├── tests/
-│   ├── conftest.py          # Pytest 配置文件
-│   ├── test_config/         # 配置模块测试
-│   ├── test_api/            # API 封装层测试
-│   ├── test_tools/          # 工具函数测试
-│   ├── test_knowledge/      # 知识约束测试
-│   ├── test_agent/          # 决策引擎测试
-│   ├── test_optics/         # 光学计算测试
-│   ├── test_report/         # 报告生成测试
-│   └── test_session/        # 会话管理测试
-├── pyproject.toml           # 项目配置与依赖
-├── .pre-commit-config.yaml  # Pre-commit hooks
-├── .gitignore               # Git 忽略规则
-└── README.md                # 本文件
+│   ├── core/           # AgentOrchestrator, 工作流引擎, 任务调度
+│   ├── tools/          # Pydantic Tool Registry, 标准化工具接口
+│   ├── zos/            # ZOS Dispatcher, ZOS-API 封装层
+│   ├── knowledge/      # 知识库, RAG Pipeline, 向量检索
+│   └── llm/            # LLM Provider (多模型支持)
+├── frontend/           # Tauri + React + TypeScript 前端
+├── tests/              # 测试
+├── config.yaml         # 配置文件
+├── pyproject.toml      # Python 项目配置
+└── README.md
 ```
 
-## 许可证
+## License
 
-待定。
+MIT

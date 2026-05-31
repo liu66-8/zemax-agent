@@ -12,6 +12,16 @@ repos:
       - id: mypy
         additional_dependencies:
           - pydantic>=2.0
+          - pydantic-settings>=2.0
           - types-PyYAML
           - numpy>=1.24
-          - pandas-stubs>=2.0
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest tests/ -x --tb=short
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: false

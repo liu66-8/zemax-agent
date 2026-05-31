@@ -1,20 +1,18 @@
-# Zemax-Agent 配置文件
+# Zemax-Agent 配置文件示例
+# 复制此文件为 config.yaml 并按需修改
 # 环境变量覆盖规则：ZEMAX_AGENT_<SECTION>__<KEY>（优先级最高）
-# 例如：ZEMAX_AGENT_LLM__API_KEY=sk-xxx
 
-# Zemax OpticStudio 连接配置
 zos:
-  connection_mode: standalone    # standalone | extension
+  connection_mode: standalone
   connection_timeout: 30.0
   auto_reconnect: true
   max_reconnect_attempts: 3
   task_queue_max_size: 100
   heartbeat_interval: 5.0
 
-# 大语言模型配置
 llm:
-  provider: openai               # openai | azure | local
-  api_key: ""                    # 建议通过环境变量设置
+  provider: openai
+  api_key: ""                    # 请填入你的 API Key
   api_base: https://api.openai.com/v1
   model: gpt-4
   max_tokens: 4096
@@ -24,7 +22,6 @@ llm:
   context_window_size: 128000
   max_context_messages: 20
 
-# 存储配置
 storage:
   db_path: ./zemax_agent.db
   qdrant_url: http://localhost:6333
@@ -32,30 +29,25 @@ storage:
   embedder_model: sentence-transformers/all-MiniLM-L6-v2
   embedder_device: cpu
 
-# 项目管理配置
 project:
   workspace_dir: ./workspace
   template_dir: ./templates
 
-# 优化配置
 optimization:
   max_iterations: 100
   convergence_threshold: 1.0e-06
   auto_hammer: false
-  stagnation_threshold: 5        # 停滞检测连续轮数
-  stagnation_change_rate: 1.0e-04 # 停滞判定变化率阈值
+  stagnation_threshold: 5
+  stagnation_change_rate: 1.0e-04
 
-# 公差分析配置
 tolerance:
   default_sample_count: 500
 
-# 日志配置
 logging:
   level: INFO
   file: ./logs/zemax_agent.log
   format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
   date_format: "%Y-%m-%d %H:%M:%S"
 
-# 通用配置
 workspace_dir: ./workspace
 checkpoint_dir: ./checkpoints
