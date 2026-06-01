@@ -1,1 +1,12 @@
-{}
+{
+  "app\\services\\api.ts -> @tauri-apps/api/core": {
+    "id": "app\\services\\api.ts -> @tauri-apps/api/core",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_tauri-apps_api_core_js.js"
+    ]
+  },
+  "app\\stores\\index.ts -> @/app/services/api": {
+    "id": "app\\stores\\index.ts -> @/app/services/api",
+    "files": []
+  }
+}

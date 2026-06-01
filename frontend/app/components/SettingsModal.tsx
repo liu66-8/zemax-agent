@@ -9,13 +9,36 @@ export default function SettingsModal() {
 
   return (
     <div className="modal-overlay" onClick={() => setShowSettings(false)}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ minWidth: 520 }}>
+      <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ minWidth: 540 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h2 style={{ margin: 0 }}>系统设置</h2>
           <button className="btn btn-ghost btn-sm" onClick={() => setShowSettings(false)}><X size={16} /></button>
         </div>
 
-        <h3 style={{ fontSize: 13, color: "var(--accent)", marginBottom: 12, marginTop: 16 }}>Zemax OpticStudio</h3>
+        <h3 style={{ fontSize: 13, color: "var(--accent)", marginBottom: 12 }}>DeepSeek 大语言模型</h3>
+        <div style={{ marginBottom: 10 }}>
+          <label style={{ fontSize: 11, color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>API Key <span style={{ color: "var(--error)" }}>*</span></label>
+          <input className="input" type="password" value={settings.llmApiKey}
+            placeholder="sk-xxxxxxxxxxxxxxxx"
+            onChange={(e) => update({ llmApiKey: e.target.value })} />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div>
+            <label style={{ fontSize: 11, color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>模型</label>
+            <select className="input" value={settings.llmModel}
+              onChange={(e) => update({ llmModel: e.target.value })}>
+              <option value="deepseek-chat">DeepSeek V3 (Chat)</option>
+              <option value="deepseek-reasoner">DeepSeek R1 (Reasoner)</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 11, color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>API Base</label>
+            <input className="input" value={settings.llmApiBase}
+              onChange={(e) => update({ llmApiBase: e.target.value })} />
+          </div>
+        </div>
+
+        <h3 style={{ fontSize: 13, color: "var(--accent)", marginBottom: 12, marginTop: 18 }}>Zemax OpticStudio</h3>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <div>
             <label style={{ fontSize: 11, color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>连接模式</label>
@@ -32,31 +55,9 @@ export default function SettingsModal() {
           </div>
         </div>
 
-        <h3 style={{ fontSize: 13, color: "var(--accent)", marginBottom: 12, marginTop: 16 }}>Qdrant 向量存储</h3>
-        <div>
-          <label style={{ fontSize: 11, color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>服务器地址</label>
-          <input className="input" value={settings.qdrantUrl}
-            onChange={(e) => update({ qdrantUrl: e.target.value })} />
-        </div>
-
-        <h3 style={{ fontSize: 13, color: "var(--accent)", marginBottom: 12, marginTop: 16 }}>LLM 大语言模型</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div>
-            <label style={{ fontSize: 11, color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>提供商</label>
-            <input className="input" value={settings.llmProvider}
-              onChange={(e) => update({ llmProvider: e.target.value })} />
-          </div>
-          <div>
-            <label style={{ fontSize: 11, color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>模型</label>
-            <input className="input" value={settings.llmModel}
-              onChange={(e) => update({ llmModel: e.target.value })} />
-          </div>
-        </div>
-        <div style={{ marginTop: 10 }}>
-          <label style={{ fontSize: 11, color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>API Base URL</label>
-          <input className="input" value={settings.llmApiBase}
-            onChange={(e) => update({ llmApiBase: e.target.value })} />
-        </div>
+        <h3 style={{ fontSize: 13, color: "var(--accent)", marginBottom: 12, marginTop: 18 }}>Qdrant 向量存储</h3>
+        <input className="input" value={settings.qdrantUrl}
+          onChange={(e) => update({ qdrantUrl: e.target.value })} />
 
         <div className="modal-actions">
           <button className="btn btn-secondary" onClick={() => setShowSettings(false)}>取消</button>

@@ -1,6 +1,8 @@
 [package]
 name = "zemax-agent"
 version = "0.1.0"
+description = "Zemax Agent - AI-powered Optical Engineering Workspace"
+authors = ["Zemax Agent Team"]
 edition = "2021"
 
 [dependencies]
@@ -11,7 +13,3 @@ serde_json = "1"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
-
-[lib]
-name = "zemax_agent_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]

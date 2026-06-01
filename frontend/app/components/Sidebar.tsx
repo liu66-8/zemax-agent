@@ -1,54 +1,90 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FolderOpen, Plus, Clock, FileText, Zap, Database } from "lucide-react";
-import { useProjectStore, useTaskStore, useConnectionStore, useFileStore, useDesignStore, type ProjectItem } from "@/app/stores";
-import { useModal, ConfirmDialog } from "@/app/components/Modal";
+import { useEffect } from "react";
+import { FolderOpen, Plus, Clock, FileText, Zap, Database, Loader2 } from "lucide-react";
+import { useProjectStore, useTaskStore, useConnectionStore, useFileStore, useDesignStore, type ProjectItem, type SurfaceData } from "@/app/stores";
+import { useModal } from "@/app/components/Modal";
+import { createTauriIPC } from "@/app/services/api";
+import { useState } from "react";
+
+const phaseLabels: Record<string, string> = {
+  requirements: "需求", initial_structure: "初始结构",
+  optimization: "优化", analysis: "分析", tolerance: "容差", report: "报告",
+};
 
 export default function Sidebar() {
-  const { projects, current, setProjects, setCurrent } = useProjectStore();
-  const { tasks } = useTaskStore();
+  const { projects, current, setProjects, setCurrent, loading } = useProjectStore();
+  const { tasks, setTasks } = useTaskStore();
   const { zos, qdrant } = useConnectionStore();
   const { recentFiles } = useFileStore();
-  const { setLensData } = useDesignStore();
+  const { setLensData, loading: designLoading } = useDesignStore();
   const { open, close } = useModal();
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
 
   useEffect(() => {
-    Promise.resolve([
-      { id: "demo-1", name: "Cooke Triplet f/4 100mm", description: "标准三片式镜头设计", system_type: "Cooke Triplet", design_phase: "optimization", tags: [], created_at: "2025-06-01" },
-      { id: "demo-2", name: "Double Gauss f/2 50mm", description: "大光圈双高斯设计", system_type: "Double Gauss", design_phase: "initial_structure", tags: [], created_at: "2025-06-02" },
-    ]).then(setProjects);
+    const ipc = createTauriIPC();
+    ipc.listProjects().then((data: any) => {
+      if (Array.isArray(data) && data.length > 0) setProjects(data);
+    }).catch(() => {});
   }, []);
 
-  const phaseLabels: Record<string, string> = {
-    requirements: "需求", initial_structure: "初始结构",
-    optimization: "优化", analysis: "分析", tolerance: "容差", report: "报告",
-  };
+  useEffect(() => {
+    const ipc = createTauriIPC();
+    ipc.getTasks().then((data: any) => {
+      if (Array.isArray(data)) { setTasks(data); }
+    }).catch(() => {});
+    const interval = setInterval(() => {
+      ipc.getTasks().then((data: any) => {
+        if (Array.isArray(data)) setTasks(data);
+      }).catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const handleNewProject = () => {
+  const handleNewProject = async () => {
     if (!name.trim()) return;
-    const p: ProjectItem = { id: `proj-${Date.now()}`, name, description: desc, system_type: "", design_phase: "requirements", tags: [], created_at: new Date().toISOString() };
-    setProjects([p, ...projects]); setCurrent(p);
+    try {
+      const ipc = createTauriIPC();
+      const result = await ipc.createProject(name, desc);
+      if (result) {
+        const p: ProjectItem = {
+          id: `proj-${Date.now()}`, name, description: desc,
+          system_type: "", design_phase: "requirements", tags: [],
+          created_at: new Date().toISOString(),
+        };
+        setProjects([p, ...projects]);
+        setCurrent(p);
+      }
+    } catch { /* silent */ }
     setName(""); setDesc(""); close();
   };
 
-  const loadDesign = () => {
-    const mockData = [
-      { index: 1, surf_type: "Standard", radius: 0, thickness: 1e10, glass: "", semi_diameter: 25, conic: 0, is_stop: false },
-      { index: 2, surf_type: "Standard", radius: 50, thickness: 5, glass: "N-BK7", semi_diameter: 25, conic: 0, is_stop: true },
-      { index: 3, surf_type: "Standard", radius: -200, thickness: 50, glass: "", semi_diameter: 23, conic: 0, is_stop: false },
-      { index: 4, surf_type: "Standard", radius: 0, thickness: 45, glass: "", semi_diameter: 10, conic: 0, is_stop: false },
-    ];
-    setLensData(mockData, 100, 4.0, 100);
+  const loadDesign = async () => {
+    const ipc = createTauriIPC();
+    const data: any = await ipc.getLensData();
+    if (data && data.surfaces) {
+      setLensData(
+        data.surfaces as SurfaceData[],
+        data.effective_focal_length || 0,
+        data.f_number || 0,
+        data.total_track || 0,
+      );
+    }
+  };
+
+  const selectProject = (p: ProjectItem) => {
+    setCurrent(p);
+    loadDesign();
   };
 
   const openNewModal = () => open(
     <div>
       <h2>新建项目</h2>
-      <input className="input" placeholder="项目名称" value={name} onChange={(e) => setName(e.target.value)} autoFocus style={{ marginBottom: 10 }} />
-      <input className="input" placeholder="项目描述（选填）" value={desc} onChange={(e) => setDesc(e.target.value)} />
+      <input className="input" placeholder="项目名称" value={name}
+        onChange={(e) => setName(e.target.value)} autoFocus style={{ marginBottom: 10 }} />
+      <input className="input" placeholder="项目描述（选填）" value={desc}
+        onChange={(e) => setDesc(e.target.value)} />
       <div className="modal-actions">
         <button className="btn btn-secondary" onClick={close}>取消</button>
         <button className="btn btn-primary" onClick={handleNewProject}>创建</button>
@@ -81,19 +117,23 @@ export default function Sidebar() {
           <h3>项目</h3>
           <button className="btn btn-primary btn-sm" onClick={openNewModal}><Plus size={13} /></button>
         </div>
-        {projects.length === 0 ? (
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "16px 0" }}><Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} /></div>
+        ) : projects.length === 0 ? (
           <div style={{ textAlign: "center", padding: "20px 0", color: "var(--text-tertiary)", fontSize: 12 }}>
             <FolderOpen size={24} style={{ opacity: 0.3, marginBottom: 6 }} /><p>暂无项目</p>
           </div>
         ) : (
           projects.map((p) => (
             <div key={p.id} className={`card ${current?.id === p.id ? "active" : ""}`}
-              onClick={() => { setCurrent(p); loadDesign(); }}
+              onClick={() => selectProject(p)}
               style={{ cursor: "pointer", marginBottom: 6 }}>
               <div style={{ fontWeight: 500, fontSize: 13 }}>{p.name}</div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 11, color: "var(--text-tertiary)" }}>
                 <span>{p.system_type || "新项目"}</span>
-                <span className="badge" style={{ background: "var(--bg-hover)", color: "var(--text-secondary)" }}>{phaseLabels[p.design_phase] || p.design_phase}</span>
+                <span className="badge" style={{ background: "var(--bg-hover)", color: "var(--text-secondary)" }}>
+                  {phaseLabels[p.design_phase] || p.design_phase}
+                </span>
               </div>
             </div>
           ))
