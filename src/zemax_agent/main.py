@@ -125,12 +125,19 @@ ZOS_TOOLS = [
             "parameters": {"type": "object", "properties": {"focal_length": {"type": "number", "default": 100}, "f_number": {"type": "number", "default": 4}, "field_angle": {"type": "number", "default": 20}}, "required": ["focal_length"]},
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "zos.create_doublet",
+            "description": "创建双胶合透镜初始结构(正透镜+负透镜胶合, 校正球差和色差). 需要 OpticStudio 运行.",
+            "parameters": {"type": "object", "properties": {"focal_length": {"type": "number", "default": 100, "description": "有效焦距(mm)"}, "f_number": {"type": "number", "default": 5, "description": "F数"}, "glass_crown": {"type": "string", "default": "N-BK7", "description": "冕牌玻璃"}, "glass_flint": {"type": "string", "default": "F2", "description": "火石玻璃"}, "field_angle": {"type": "number", "default": 1, "description": "半视场角(度)"}}, "required": ["focal_length"]},
+        },
+    },
 ]
 
 # ── Tool execution handler ──
 def execute_tool(tool_name: str, params: dict) -> dict:
     try:
-        # Try real ZOS execution first
         from zemax_agent.zos import ZOSDispatcher
         dispatcher = ZOSDispatcher.get_instance()
         if not dispatcher.is_connected:
@@ -139,33 +146,7 @@ def execute_tool(tool_name: str, params: dict) -> dict:
         return {"success": True, "data": result, "source": "zos-api"}
     except Exception as e:
         logger.warning("ZOS tool failed: %s - %s", tool_name, e)
-        # Fallback: simulation mode with realistic data
-        return simulate_tool(tool_name, params)
-
-
-def simulate_tool(tool_name: str, params: dict) -> dict:
-    name = tool_name.replace("zos.", "")
-    if name == "get_system_info":
-        return {"success": True, "data": {"EFL": 100.0, "FNumber": 4.0, "NA": 0.125, "surface_count": 6, "mode": "Sequential", "total_track": 100.0}, "source": "simulation"}
-    if name == "get_lens_summary" or name == "load_zmx":
-        return {"success": True, "data": {"effective_focal_length": 100.0, "f_number": 4.0, "total_track": 100.0, "surfaces": [{"index": 1, "surf_type": "Standard", "radius": 0, "thickness": 1e10, "glass": "", "semi_diameter": 25}, {"index": 2, "surf_type": "Standard", "radius": 50, "thickness": 5, "glass": "N-BK7", "semi_diameter": 25, "is_stop": True}, {"index": 3, "surf_type": "Standard", "radius": -200, "thickness": 50, "glass": "", "semi_diameter": 23}, {"index": 4, "surf_type": "Standard", "radius": 0, "thickness": 45, "glass": "", "semi_diameter": 10}]}, "source": "simulation"}
-    if name == "get_mtf":
-        return {"success": True, "data": {"tangential": {"0.0": 0.85, "0.7": 0.72, "1.0": 0.58}, "sagittal": {"0.0": 0.85, "0.7": 0.78, "1.0": 0.65}, "diffraction_limit": 0.92, "frequency": params.get("frequency", 30)}, "source": "simulation"}
-    if name == "get_spot":
-        return {"success": True, "data": {"rms_radius": {"0.0": 3.2, "0.7": 5.8, "1.0": 9.1}, "geo_radius": {"0.0": 6.5, "0.7": 12.3, "1.0": 20.5}, "airy_radius": 7.3}, "source": "simulation"}
-    if name == "get_seidel":
-        return {"success": True, "data": {"spherical": -0.35, "coma": 0.08, "astigmatism": -0.02, "field_curvature": -0.05, "distortion": 0.12, "axial_color": 0.15, "lateral_color": 0.03}, "source": "simulation"}
-    if name == "get_wavefront":
-        return {"success": True, "data": {"rms": {"0.0": 0.04, "0.7": 0.11, "1.0": 0.22}, "pv": {"0.0": 0.18, "0.7": 0.52, "1.0": 1.05}}, "source": "simulation"}
-    if name == "run_optimization":
-        return {"success": True, "data": {"initial_mf": 0.052, "final_mf": 0.008, "improvement_pct": 84.6, "cycles": params.get("cycles", 50), "status": "converged"}, "source": "simulation"}
-    if name == "create_cooke_triplet":
-        fl = params.get("focal_length", 100)
-        fn = params.get("f_number", 4)
-        return {"success": True, "data": {"effective_focal_length": fl, "f_number": fn, "total_track": fl * 1.0, "elements": 3, "surfaces": [{"index": 1, "surf_type": "Standard", "radius": 0, "thickness": 1e10, "glass": ""}, {"index": 2, "surf_type": "Standard", "radius": 0.45 * fl, "thickness": 0.05 * fl, "glass": "N-BK7"}, {"index": 3, "surf_type": "Standard", "radius": -2.5 * fl, "thickness": 0.3 * fl, "glass": "", "is_stop": True}, {"index": 4, "surf_type": "Standard", "radius": -0.4 * fl, "thickness": 0.03 * fl, "glass": "SF5"}, {"index": 5, "surf_type": "Standard", "radius": 1.5 * fl, "thickness": 0.08 * fl, "glass": ""}, {"index": 6, "surf_type": "Standard", "radius": 0.55 * fl, "thickness": 0.05 * fl, "glass": "N-BK7"}, {"index": 7, "surf_type": "Standard", "radius": -1.2 * fl, "thickness": 0.42 * fl, "glass": ""}], "message": f"Created Cooke Triplet: f={fl}mm, F/{fn}"}, "source": "simulation"}
-    if name == "set_aperture" or name == "set_fields" or name == "set_wavelengths" or name == "set_surface_data" or name == "insert_surface":
-        return {"success": True, "data": {"updated": True, "params": params}, "source": "simulation"}
-    return {"success": False, "error": f"Unknown tool: {tool_name}", "source": "simulation"}
+        return {"success": False, "error": f"Zemax OpticStudio 未连接或执行失败: {str(e)}", "source": "zos-api"}
 
 
 class APIHandler(BaseHTTPRequestHandler):
