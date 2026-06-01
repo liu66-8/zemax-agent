@@ -5,7 +5,7 @@ from zemax_agent.core import load_config, setup_logging, get_config
 
 
 def main():
-    project_root = Path(__file__).parent.parent
+    project_root = Path(__file__).parent.parent.parent
     config_path = project_root / "config.yaml"
 
     config = load_config(str(config_path))
