@@ -75,13 +75,16 @@ export default function AIPanel() {
     ];
 
     try {
+      const body: any = { model: settings.llmModel, messages: chatMessages, temperature: 0.2, max_tokens: 4096 };
+      if (tools.length > 0) body.tools = tools;
+
       const llmRes = await fetch(`${settings.llmApiBase}/chat/completions`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${settings.llmApiKey}` },
-        body: JSON.stringify({ model: settings.llmModel, messages: chatMessages, tools, temperature: 0.2, max_tokens: 4096 }),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
-      if (!llmRes.ok) throw new Error(`LLM error ${llmRes.status}`);
+      if (!llmRes.ok) { const errText = await llmRes.text(); throw new Error(`LLM error ${llmRes.status}: ${errText.slice(0, 100)}`); }
 
       const llmData = await llmRes.json();
       const choice = llmData.choices?.[0];

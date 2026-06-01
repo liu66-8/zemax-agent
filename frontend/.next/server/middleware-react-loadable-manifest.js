@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST='{"app\\\\services\\\\api.ts -> @tauri-apps/api/core":{"id":924,"files":["static/chunks/924.e35eb0a94645e363.js"]},"app\\\\stores\\\\index.ts -> @/app/services/api":{"id":1282,"files":[]}}';
+self.__REACT_LOADABLE_MANIFEST='{"app\\\\stores\\\\index.ts -> @/app/services/api":{"id":1282,"files":[]}}';
