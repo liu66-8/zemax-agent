@@ -1,0 +1,86 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --border: #475569;
+  --success: #22c55e;
+  --warning: #eab308;
+  --error: #ef4444;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+}
+
+#root { height: 100%; }
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-title { font-size: 16px; font-weight: 600; }
+.app-subtitle { font-size: 12px; color: var(--text-secondary); }
+.app-status { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; }
+
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  &.status-connected { background: var(--success); }
+  &.status-disconnected { background: var(--error); }
+}
+
+.app-nav {
+  display: flex;
+  gap: 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+}
+
+.nav-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.nav-btn:hover { color: var(--text-primary); }
+.nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.app-main { flex: 1; padding: 16px; overflow-y: auto; }
+
+.panel { padding: 24px; background: var(--bg-secondary); border-radius: 8px; }
+.panel h2 { font-size: 18px; margin-bottom: 12px; }
+
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 16px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
