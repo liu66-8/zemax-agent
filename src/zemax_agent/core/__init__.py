@@ -11,6 +11,11 @@ from zemax_agent.core.version_manager import VersionManager, DesignSnapshot, Per
 from zemax_agent.core.prompts import PROMPT_TEMPLATES, get_prompt, get_system_prompt
 from zemax_agent.core.agent import LangGraphAgent, AgentState, ActionPlan, ActionStep, PerformanceSnapshot as AgentPerfSnapshot
 from zemax_agent.core.ipc import IPCRouter, IPCMessage
+from zemax_agent.core.optimization_monitor import OptimizationMonitor, ConvergenceState, OptimizationTrace
+from zemax_agent.core.optimization_strategy import OptimizationStrategyAdjuster, OptimizationStrategy, StrategyStep, StrategyRecord
+from zemax_agent.core.simulation_reader import SimulationDataReader, SimulationData, MTFData, SpotData, WavefrontData, SeidelData
+from zemax_agent.core.aberration import ImagingQualityEvaluator, AberrationAnalyzer, PerformanceEvaluation, AberrationDiagnosis
+from zemax_agent.core.report_assembler import ReportAssembler, DesignReport, ReportSection
 
 __all__ = [
     "AppConfig", "ZOSConfig", "LLMConfig", "StorageConfig", "ProjectConfig",
@@ -27,4 +32,9 @@ __all__ = [
     "PROMPT_TEMPLATES", "get_prompt", "get_system_prompt",
     "LangGraphAgent", "AgentState", "ActionPlan", "ActionStep", "AgentPerfSnapshot",
     "IPCRouter", "IPCMessage",
+    "OptimizationMonitor", "ConvergenceState", "OptimizationTrace",
+    "OptimizationStrategyAdjuster", "OptimizationStrategy", "StrategyStep", "StrategyRecord",
+    "SimulationDataReader", "SimulationData", "MTFData", "SpotData", "WavefrontData", "SeidelData",
+    "ImagingQualityEvaluator", "AberrationAnalyzer", "PerformanceEvaluation", "AberrationDiagnosis",
+    "ReportAssembler", "DesignReport", "ReportSection",
 ]
