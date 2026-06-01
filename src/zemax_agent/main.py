@@ -163,22 +163,170 @@ ZOS_TOOLS = [
     },
 ]
 
+# ── ZOS connection singleton ──
+_connection = None
+
+
+def _get_connection():
+    global _connection
+    if _connection is None:
+        import sys, os
+        zos_root = r"C:\Program Files\ANSYS Inc\Ansys Zemax OpticStudio 2024 R1.00"
+        zos_libs = os.path.join(zos_root, "ZOS-API", "Libraries")
+        for p in (zos_root, zos_libs):
+            if os.path.isdir(p) and p not in sys.path:
+                sys.path.append(p)
+        from zemax_agent.zos.connection import ZOSConnection
+        _connection = ZOSConnection()
+    if not _connection.is_connected:
+        _connection.connect(timeout=15)
+    return _connection
+
+
 # ── Tool execution handler ──
 def execute_tool(tool_name: str, params: dict) -> dict:
-    # DeepSeek uses zos_xxx, ZOS dispatcher uses zos.xxx
-    internal_name = tool_name.replace("zos_", "zos.", 1)
     if not _init_zos_api():
         return {"success": False, "error": "Zemax OpticStudio 2024 R1 未检测到。请确认 ZOS-API 已安装。", "source": "zos-api"}
     try:
-        from zemax_agent.zos import ZOSDispatcher
-        dispatcher = ZOSDispatcher.get_instance()
-        if not dispatcher.is_connected:
-            dispatcher.connect(timeout=15)
-        result = dispatcher.submit_and_wait(internal_name, params=params, timeout=30)
-        return {"success": True, "data": result, "source": "zos-api"}
+        internal = tool_name.replace("zos_", "zos.", 1)
+        short = internal.replace("zos.", "")
+        conn = _get_connection()
+
+        if short == "get_system_info":
+            from zemax_agent.zos.api_system import get_system_info
+            data = get_system_info(conn)
+            return {"success": True, "data": data.model_dump() if hasattr(data, 'model_dump') else str(data), "source": "zos-api"}
+
+        if short == "get_lens_summary":
+            from zemax_agent.zos.api_lens import get_lens_data_summary
+            data = get_lens_data_summary(conn)
+            return {"success": True, "data": data.model_dump() if hasattr(data, 'model_dump') else str(data), "source": "zos-api"}
+
+        if short == "load_zmx":
+            from zemax_agent.zos.api_system import load_zmx
+            data = load_zmx(conn, params.get("path", ""))
+            return {"success": True, "data": data.model_dump() if hasattr(data, 'model_dump') else str(data), "source": "zos-api"}
+
+        if short == "set_aperture":
+            from zemax_agent.zos.api_lens import set_aperture
+            set_aperture(conn, params["aperture_type"], float(params["value"]))
+            return {"success": True, "data": {"aperture": params}, "source": "zos-api"}
+
+        if short == "set_fields":
+            from zemax_agent.zos.api_lens import set_fields
+            from zemax_agent.zos.models import FieldConfig
+            fields_list = [(f["x"], f["y"]) for f in params["fields"]]
+            cfg = FieldConfig(field_count=len(fields_list), field_type=0, fields=fields_list)
+            set_fields(conn, cfg)
+            return {"success": True, "data": {"fields": params["fields"]}, "source": "zos-api"}
+
+        if short == "set_wavelengths":
+            from zemax_agent.zos.api_lens import set_wavelengths
+            from zemax_agent.zos.models import WavelengthConfig
+            wls = params["wavelengths"]
+            cfg = WavelengthConfig(wavelength_count=len(wls), wavelengths=wls, primary_wavelength=params.get("primary_index", 2))
+            set_wavelengths(conn, cfg)
+            return {"success": True, "data": {"wavelengths": wls}, "source": "zos-api"}
+
+        if short == "insert_surface":
+            from zemax_agent.zos.api_lens import insert_surface, set_surface_data
+            data = insert_surface(conn, int(params["surface_index"]))
+            extra = {k: v for k, v in params.items() if k != "surface_index" and v}
+            if extra:
+                set_surface_data(conn, data.index, **extra)
+            return {"success": True, "data": data.model_dump() if hasattr(data, 'model_dump') else str(data), "source": "zos-api"}
+
+        if short == "set_surface_data":
+            from zemax_agent.zos.api_lens import set_surface_data
+            idx = int(params.pop("surface_index"))
+            data = set_surface_data(conn, idx, **params)
+            return {"success": True, "data": data.model_dump() if hasattr(data, 'model_dump') else str(data), "source": "zos-api"}
+
+        if short == "get_mtf":
+            from zemax_agent.zos.api_analysis import get_mtf
+            freq = float(params.get("frequency", 30))
+            data = get_mtf(conn, freq)
+            return {"success": True, "data": data.model_dump() if hasattr(data, 'model_dump') else str(data), "source": "zos-api"}
+
+        if short == "get_spot":
+            from zemax_agent.zos.api_analysis import get_spot
+            data = get_spot(conn)
+            return {"success": True, "data": data.model_dump() if hasattr(data, 'model_dump') else str(data), "source": "zos-api"}
+
+        if short == "get_seidel":
+            from zemax_agent.zos.api_analysis import get_seidel
+            data = get_seidel(conn)
+            return {"success": True, "data": data.model_dump() if hasattr(data, 'model_dump') else str(data), "source": "zos-api"}
+
+        if short == "get_wavefront":
+            from zemax_agent.zos.api_analysis import get_wavefront
+            data = get_wavefront(conn)
+            return {"success": True, "data": data.model_dump() if hasattr(data, 'model_dump') else str(data), "source": "zos-api"}
+
+        if short == "run_optimization":
+            from zemax_agent.zos.api_optimize import build_merit_function, run_optimization
+            build_merit_function(conn, clear_existing=True)
+            cycles = int(params.get("cycles", 50))
+            data = run_optimization(conn, cycles=cycles)
+            return {"success": True, "data": data.model_dump() if hasattr(data, 'model_dump') else str(data), "source": "zos-api"}
+
+        if short in ("create_cooke_triplet", "create_doublet"):
+            return _create_design(conn, short, params)
+
+        return {"success": False, "error": f"Unknown tool: {tool_name}", "source": "zos-api"}
+
     except Exception as e:
-        logger.warning("ZOS tool failed: %s - %s", internal_name, e)
-        return {"success": False, "error": f"执行失败: {str(e)}", "source": "zos-api"}
+        logger.warning("Tool %s failed: %s", tool_name, e)
+        import traceback
+        logger.warning("Traceback: %s", traceback.format_exc())
+        return {"success": False, "error": f"{str(e)}", "source": "zos-api"}
+
+
+def _create_design(conn, design_type: str, params: dict) -> dict:
+    from zemax_agent.zos.api_system import make_sequential, get_system_info
+    from zemax_agent.zos.api_lens import (
+        set_aperture, set_fields, set_wavelengths,
+        insert_surface, set_surface_data, get_lens_data_summary,
+    )
+    from zemax_agent.zos.models import FieldConfig, WavelengthConfig
+
+    make_sequential(conn)
+    fl = float(params.get("focal_length", 100))
+    fn = float(params.get("f_number", 5))
+    fov = float(params.get("field_angle", 1))
+    gc = params.get("glass_crown", "N-BK7")
+    gf = params.get("glass_flint", "F2")
+
+    set_aperture(conn, "FNumber", fn)
+    set_fields(conn, FieldConfig(
+        field_count=3, field_type=0,
+        fields=[(0, 0.0), (0, 0.7*fov), (0, fov)],
+    ))
+    set_wavelengths(conn, WavelengthConfig(wavelength_count=3, wavelengths=[0.486, 0.587, 0.656], primary_wavelength=2))
+
+    # Build doublet: OBJ → Lens1_front → Lens1_Lens2_cement → Lens2_back → IMG
+    insert_surface(conn, 0)  # Surface 1: first lens
+    insert_surface(conn, 1)  # Surface 2: cement
+    insert_surface(conn, 2)  # Surface 3: second lens back
+
+    if design_type == "create_doublet":
+        set_surface_data(conn, 1, surface_type="Standard", radius=0.45*fl, thickness=0.08*fl, glass=gc)
+        set_surface_data(conn, 2, surface_type="Standard", radius=-0.35*fl, thickness=0.02*fl, glass=gf)
+        set_surface_data(conn, 3, surface_type="Standard", radius=-1.2*fl, thickness=0.8*fl, glass="")
+        set_surface_data(conn, 2, is_stop=True)
+    else:
+        # create_cooke_triplet
+        insert_surface(conn, 3)
+        insert_surface(conn, 4)
+        set_surface_data(conn, 1, surface_type="Standard", radius=0.45*fl, thickness=0.05*fl, glass="N-BK7")
+        set_surface_data(conn, 2, surface_type="Standard", radius=-2.5*fl, thickness=0.3*fl, glass="", is_stop=True)
+        set_surface_data(conn, 3, surface_type="Standard", radius=-0.4*fl, thickness=0.03*fl, glass="SF5")
+        set_surface_data(conn, 4, surface_type="Standard", radius=1.5*fl, thickness=0.08*fl, glass="")
+        set_surface_data(conn, 5, surface_type="Standard", radius=0.55*fl, thickness=0.05*fl, glass="N-BK7")
+        set_surface_data(conn, 6, surface_type="Standard", radius=-1.2*fl, thickness=0.42*fl, glass="")
+
+    summary = get_lens_data_summary(conn)
+    return {"success": True, "data": summary.model_dump() if hasattr(summary, 'model_dump') else str(summary), "source": "zos-api"}
 
 
 class APIHandler(BaseHTTPRequestHandler):

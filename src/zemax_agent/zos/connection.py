@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import sys
 import time
 from typing import Any, Optional
 
@@ -20,6 +22,45 @@ EXTENSION_APPLICATION_NAME = "ZOSAPI_Application"
 ZOSAPI_INTERFACES_DLL = "ZOSAPI_Interfaces.dll"
 ZOSAPI_DLL = "ZOSAPI.dll"
 
+_ZOS_ROOT = r"C:\Program Files\ANSYS Inc\Ansys Zemax OpticStudio 2024 R1.00"
+
+
+def _ensure_zos_paths() -> None:
+    """Ensure ZOSAPI DLL directories are in sys.path BEFORE clr is used."""
+    import sys
+    for d in (_ZOS_ROOT, os.path.join(_ZOS_ROOT, "ZOS-API", "Libraries")):
+        if os.path.isdir(d) and d not in sys.path:
+            sys.path.insert(0, d)
+
+
+# Initialize paths at module load time
+_ensure_zos_paths()
+
+
+def _load_assembly(name: str) -> Any:
+    """Load a ZOSAPI assembly by name."""
+    import clr
+    old_dir = os.getcwd()
+    try:
+        for d in (_ZOS_ROOT, os.path.join(_ZOS_ROOT, "ZOS-API", "Libraries")):
+            path = os.path.join(d, name)
+            if os.path.exists(path):
+                os.chdir(d)
+                try:
+                    clr.AddReference(name)
+                    return
+                except Exception:
+                    pass
+                name_no_ext = name.replace(".dll", "")
+                try:
+                    clr.AddReference(name_no_ext)
+                    return
+                except Exception:
+                    pass
+        raise ZOSConnectionError(f"Cannot load {name}: file not found in Zemax directories")
+    finally:
+        os.chdir(old_dir)
+
 
 class ZOSConnection:
     def __init__(self, mode: str = "standalone"):
@@ -38,33 +79,18 @@ class ZOSConnection:
             return
 
         try:
-            clr.AddReference(ZOSAPI_INTERFACES_DLL)
-            clr.AddReference(ZOSAPI_DLL)
+            _load_assembly(ZOSAPI_INTERFACES_DLL)
+            _load_assembly(ZOSAPI_DLL)
 
-            import ZOSAPI_Interfaces as ZOSAPI_Intf
-            import ZOSAPI as ZOSAPI_Impl
+            import ZOSAPI
+            self._zosapi = ZOSAPI
 
-            self._zosapi_interface = ZOSAPI_Intf
-            self._zosapi = ZOSAPI_Impl
-
-            if self._mode == "standalone":
-                self._app = ZOSAPI_Impl.ZOSAPI_Initializer.CreateInitializer()
-                start_time = time.time()
-                while time.time() - start_time < timeout:
-                    try:
-                        self._app = self._app.CreateNewApplication()
-                        if self._app is not None and self._app.IsValidLicenseForAPI:
-                            break
-                    except Exception:
-                        time.sleep(1.0)
-                else:
-                    raise ZOSConnectionError("Timeout waiting for Zemax OpticStudio to start")
-
-                if not self._app.IsValidLicenseForAPI:
-                    raise ZOSConnectionError("No valid Zemax OpticStudio license for API")
-            else:
-                self._app = ZOSAPI_Impl.ZOSAPI_Initializer.CreateInitializer()
-                self._app = self._app.ConnectAsExtension(EXTENSION_APPLICATION_NAME)
+            # Create application via ZOSAPI_Connection (Zemax 2024 R1 API)
+            conn = ZOSAPI.ZOSAPI_Connection()
+            conn.ConnectionTimeoutSeconds = int(max(timeout, 10))
+            self._app = conn.CreateNewApplication()
+            if self._app is None:
+                raise ZOSConnectionError("Failed to create Zemax OpticStudio application")
 
             self._connected = True
             logger.info("ZOS-API connected (mode=%s)", self._mode)
@@ -122,7 +148,7 @@ class ZOSConnection:
 
     @property
     def zosapi_interface(self) -> Any:
-        return self._zosapi_interface
+        return self._zosapi
 
     @property
     def zosapi(self) -> Any:
