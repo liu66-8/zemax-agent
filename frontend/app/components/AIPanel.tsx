@@ -16,13 +16,16 @@ export default function AIPanel() {
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
+  const initRef = useRef(false);
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, buf]);
 
   useEffect(() => {
-    if (!messages.length) {
-      addMessage({ role: "system", content: "欢迎使用 Zemax Agent 👋 DeepSeek 模型已就绪，请描述您的光学设计任务。" });
+    if (!initRef.current && !messages.length) {
+      initRef.current = true;
+      addMessage({ role: "system", content: "👋 描述您的光学设计任务即可开始" });
     }
   }, []);
 
@@ -86,10 +89,7 @@ export default function AIPanel() {
     <div className="panel-box">
       <div className="panel-hdr">
         <Sparkles size={14} style={{ color: "var(--purple)" }} />
-        <h3>AI 助手 (DeepSeek)</h3>
-        {!settings.llmApiKey && (
-          <span style={{ fontSize: 10, color: "var(--warning)", marginLeft: 8 }}>未配置 API Key</span>
-        )}
+        <h3>AI 助手</h3>
       </div>
       <div className="panel-body" style={{ display: "flex", flexDirection: "column" }}>
         <div style={{ flex: 1, overflowY: "auto", marginBottom: 10 }}>
