@@ -107,13 +107,12 @@ export default function AIPanel() {
             toolMessages.push(`✅ ${toolName} 完成`);
 
             // Sync to design panel
-            if (toolName === "zos.get_lens_summary" || toolName === "zos.create_cooke_triplet" || toolName === "zos.load_zmx") {
+            if (toolName === "zos_get_lens_summary" || toolName === "zos_create_cooke_triplet" || toolName === "zos_load_zmx" || toolName === "zos_create_doublet") {
               const d = result.data;
               if (d?.surfaces) syncLensData(d.surfaces, d.effective_focal_length || 100, d.f_number || 4, d.total_track || 100);
             }
 
-            // Show tasks
-            const taskLabel = toolName.replace("zos.", "");
+            const taskLabel = toolName.replace("zos_", "");
             setTasks([{
               id: Date.now().toString(), task_type: taskLabel, status: "completed", progress: 100,
               created_at: new Date().toISOString(),
