@@ -1,59 +1,65 @@
 import { useTaskStore } from "@/stores";
+import { Clock, CheckCircle2, XCircle, Loader2, AlertCircle } from "lucide-react";
 
-const STATUS_CN: Record<string, string> = {
-  pending: "等待中", running: "执行中", completed: "已完成", failed: "失败", cancelled: "已取消",
+const STATUS_MAP: Record<string, { label: string; color: string; soft: string; icon: any }> = {
+  pending:   { label: "等待中", color: "var(--warning)",  soft: "var(--warning-soft)",  icon: Clock },
+  running:   { label: "执行中", color: "var(--accent)",   soft: "var(--accent-soft)",   icon: Loader2 },
+  completed: { label: "已完成", color: "var(--success)",  soft: "var(--success-soft)",  icon: CheckCircle2 },
+  failed:    { label: "失败",   color: "var(--error)",    soft: "var(--error-soft)",    icon: XCircle },
+  cancelled: { label: "已取消", color: "var(--text-tertiary)", soft: "transparent",     icon: AlertCircle },
 };
 
 export default function TaskConsole() {
   const { tasks, queueSize } = useTaskStore();
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <h2 style={{ fontSize: 16, margin: 0 }}>任务控制台</h2>
-        <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>队列: {queueSize}</span>
+    <div className="panel">
+      <div className="flex-between mb-16">
+        <h2>任务控制台</h2>
+        <span className="badge" style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)" }}>
+          队列 {queueSize}
+        </span>
       </div>
 
       {tasks.length === 0 ? (
-        <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>暂无任务。执行设计操作时将在此显示任务进度。</p>
+        <div className="empty-state">
+          <Clock size={44} />
+          <p>暂无任务<br />执行设计操作时将在此显示任务进度</p>
+        </div>
       ) : (
-        <div>
-          {tasks.map((t) => (
-            <div key={t.id} style={{
-              padding: "10px 12px", background: "var(--bg-tertiary)", borderRadius: 6, marginBottom: 6,
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 13, fontWeight: 500 }}>{t.task_type}</span>
-                <StatusBadge status={t.status} />
+        tasks.map((t) => {
+          const info = STATUS_MAP[t.status] || STATUS_MAP.pending;
+          const Icon = info.icon;
+          const isRunning = t.status === "running";
+          return (
+            <div key={t.id} className="card" style={{ marginBottom: 8 }}>
+              <div className="flex-between" style={{ marginBottom: isRunning ? 10 : 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <Icon size={14} style={{ color: info.color }} />
+                  <span style={{ fontWeight: 500, fontSize: 13.5 }}>{t.task_type}</span>
+                </div>
+                <span className="badge" style={{ background: info.soft, color: info.color }}>
+                  {info.label}
+                </span>
               </div>
-              {t.status === "running" && (
-                <div style={{ marginTop: 6 }}>
-                  <div style={{ height: 3, background: "var(--bg-primary)", borderRadius: 2 }}>
+              {isRunning && (
+                <div>
+                  <div style={{ height: 4, background: "var(--bg-primary)", borderRadius: 2, overflow: "hidden" }}>
                     <div style={{
-                      height: "100%", width: `${t.progress}%`,
-                      background: "var(--accent)", borderRadius: 2, transition: "width 0.3s",
+                      height: "100%", width: `${Math.max(t.progress || 0, 5)}%`,
+                      background: `linear-gradient(90deg, var(--accent), var(--success))`,
+                      borderRadius: 2, transition: "width 0.4s ease-out",
                     }} />
                   </div>
-                  <div style={{ fontSize: 10, color: "var(--text-secondary)", marginTop: 3 }}>{t.progress}%</div>
+                  <div style={{ fontSize: 10.5, color: "var(--text-tertiary)", marginTop: 5 }}>
+                    {Math.round(t.progress || 0)}%
+                  </div>
                 </div>
               )}
             </div>
-          ))}
-        </div>
+          );
+        })
       )}
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = { pending: "#eab308", running: "#3b82f6", completed: "#22c55e", failed: "#ef4444", cancelled: "#94a3b8" };
-  return (
-    <span style={{
-      padding: "2px 8px", borderRadius: 10, fontSize: 10, fontWeight: 500,
-      background: (colors[status] || "#64748b") + "20",
-      color: colors[status] || "#64748b",
-    }}>
-      {STATUS_CN[status] || status}
-    </span>
   );
 }

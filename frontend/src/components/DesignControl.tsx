@@ -1,57 +1,60 @@
 import { useDesignStore } from "@/stores/design";
 import { invokeIPC } from "@/services/ipc";
+import { Undo2, Redo2, Zap, Activity, Gauge } from "lucide-react";
 
 export default function DesignControl() {
-  const { surfaces, efl, fNumber, totalTrack, updateSurface, undo, redo } = useDesignStore();
+  const { surfaces, efl, fNumber, totalTrack, undo, redo } = useDesignStore();
 
   const quickActions = [
-    { label: "光线追迹", cmd: "system.get_system_info" },
-    { label: "MTF 分析", cmd: "analysis.get_mtf" },
-    { label: "点列图", cmd: "analysis.get_spot" },
-    { label: "光路布局", cmd: "analysis.get_layout" },
+    { label: "光线追迹", icon: Zap, cmd: "system.get_system_info" },
+    { label: "MTF 分析", icon: Activity, cmd: "analysis.get_mtf" },
+    { label: "点列图", icon: Gauge, cmd: "analysis.get_spot" },
+    { label: "光路布局", icon: Zap, cmd: "analysis.get_layout" },
   ];
 
-  const runAction = async (cmd: string) => {
-    try { await invokeIPC(cmd, {}); } catch { /* mock */ }
-  };
-
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <h2 style={{ fontSize: 16, margin: 0 }}>设计控制</h2>
-        <div style={{ display: "flex", gap: 4 }}>
-          <button onClick={undo} style={smallBtn} title="撤销">↩</button>
-          <button onClick={redo} style={smallBtn} title="重做">↪</button>
+    <div className="panel">
+      <div className="flex-between mb-16">
+        <h2>设计控制</h2>
+        <div className="flex-between gap-8">
+          <button className="btn btn-secondary" onClick={undo} title="撤销">
+            <Undo2 size={14} /> 撤销
+          </button>
+          <button className="btn btn-secondary" onClick={redo} title="重做">
+            <Redo2 size={14} /> 重做
+          </button>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
-        <InfoCard label="有效焦距" value={`${efl.toFixed(1)} mm`} />
-        <InfoCard label="F 数" value={fNumber.toFixed(1)} />
-        <InfoCard label="总长度" value={`${totalTrack.toFixed(1)} mm`} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+        <InfoCard icon={Gauge} label="有效焦距" value={`${efl.toFixed(1)} mm`} />
+        <InfoCard icon={Gauge} label="F 数" value={fNumber.toFixed(1)} />
+        <InfoCard icon={Gauge} label="总长度" value={`${totalTrack.toFixed(1)} mm`} />
       </div>
 
       {surfaces.length === 0 ? (
-        <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>暂无镜头数据，请先加载设计文件。</p>
+        <div className="empty-state" style={{ padding: "32px 24px" }}>
+          <Gauge size={40} />
+          <p>暂无镜头数据<br />请先加载 ZMX 设计文件</p>
+        </div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div style={{ overflowX: "auto", marginBottom: 16 }}>
+          <table className="data-table">
             <thead>
               <tr>
-                {["#", "面型", "曲率半径", "厚度", "玻璃", "半口径"].map((h) => (
-                  <th key={h} style={thStyle}>{h}</th>
-                ))}
+                <th>#</th><th>面型</th><th>曲率半径 (mm)</th>
+                <th>厚度 (mm)</th><th>玻璃</th><th>半口径 (mm)</th>
               </tr>
             </thead>
             <tbody>
               {surfaces.map((s) => (
-                <tr key={s.index} style={{ background: s.is_stop ? "rgba(59,130,246,0.1)" : "transparent" }}>
-                  <td style={tdStyle}>{s.index}{s.is_stop ? " ⏺" : ""}</td>
-                  <td style={tdStyle}>{s.surf_type}</td>
-                  <td style={tdStyle}>{s.radius.toFixed(2)}</td>
-                  <td style={tdStyle}>{s.thickness.toFixed(2)}</td>
-                  <td style={tdStyle}>{s.glass}</td>
-                  <td style={tdStyle}>{s.semi_diameter.toFixed(2)}</td>
+                <tr key={s.index} className={s.is_stop ? "stop-row" : ""}>
+                  <td>{s.index}{s.is_stop ? " ⏺" : ""}</td>
+                  <td style={{ fontWeight: 500 }}>{s.surf_type}</td>
+                  <td>{s.radius === 0 ? "∞" : s.radius.toFixed(3)}</td>
+                  <td>{s.thickness.toFixed(3)}</td>
+                  <td style={{ fontFamily: "var(--font-mono)", fontSize: 11.5 }}>{s.glass || "—"}</td>
+                  <td>{s.semi_diameter.toFixed(3)}</td>
                 </tr>
               ))}
             </tbody>
@@ -59,11 +62,11 @@ export default function DesignControl() {
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+      <div className="flex-between gap-8" style={{ flexWrap: "wrap" }}>
         {quickActions.map((a) => (
-          <button key={a.label} onClick={() => runAction(a.cmd)}
-            style={{ padding: "6px 14px", background: "var(--bg-tertiary)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text-primary)", fontSize: 12, cursor: "pointer" }}>
-            {a.label}
+          <button key={a.label} className="btn btn-secondary"
+            onClick={() => invokeIPC(a.cmd, {}).catch(() => {})}>
+            <a.icon size={14} /> {a.label}
           </button>
         ))}
       </div>
@@ -71,15 +74,11 @@ export default function DesignControl() {
   );
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
+function InfoCard({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
-    <div style={{ padding: "10px 12px", background: "var(--bg-tertiary)", borderRadius: 6, textAlign: "center" }}>
-      <div style={{ fontSize: 10, color: "var(--text-secondary)" }}>{label}</div>
-      <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{value}</div>
+    <div className="card" style={{ textAlign: "center", padding: "16px 12px" }}>
+      <div style={{ color: "var(--text-tertiary)", fontSize: 11, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{value}</div>
     </div>
   );
 }
-
-const thStyle: React.CSSProperties = { padding: "6px 10px", textAlign: "left", fontSize: 11, color: "var(--text-secondary)", borderBottom: "1px solid var(--border)" };
-const tdStyle: React.CSSProperties = { padding: "5px 10px", fontSize: 12, borderBottom: "1px solid var(--border)" };
-const smallBtn: React.CSSProperties = { padding: "4px 8px", background: "var(--bg-tertiary)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--text-primary)", cursor: "pointer" };

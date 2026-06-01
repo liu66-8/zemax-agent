@@ -1,19 +1,22 @@
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { useChatStore, useUIStore } from "@/stores";
+import { useChatStore } from "@/stores";
 import { invokeIPC } from "@/services/ipc";
+import { Send, Sparkles } from "lucide-react";
 
 export default function AIChat() {
   const { messages, isStreaming, addMessage, setStreaming } = useChatStore();
   const [input, setInput] = useState("");
   const [streamBuffer, setStreamBuffer] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
-  const { addNotification } = useUIStore();
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streamBuffer]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, streamBuffer]);
+
   useEffect(() => {
     if (!messages.length) {
-      addMessage({ role: "system", content: "欢迎使用 Zemax Agent 光学工程工作台。请描述您的光学设计任务。" });
+      addMessage({ role: "system", content: "欢迎使用 Zemax Agent 光学工程工作台 👋 请描述您的光学设计任务。" });
     }
   }, []);
 
@@ -29,12 +32,10 @@ export default function AIChat() {
       const data = await invokeIPC("agent_chat", { message: userMsg }) as any;
       if (data?.content) addMessage({ role: "assistant", content: data.content });
     } catch {
-      const mock = `根据您的需求，我将协助完成光学设计任务。\n\n` +
-        `**计划：**\n1. 建立初始镜头结构\n2. 配置视场和波长\n3. 执行优化\n4. 分析性能\n\n` +
-        `是否按此方案进行？`;
+      const mock = `根据您的需求，我将协助完成光学设计任务。\n\n**计划：**\n1. 建立初始镜头结构\n2. 配置视场和波长\n3. 执行优化\n4. 分析性能\n\n是否按此方案进行？`;
       for (let i = 0; i < mock.length; i++) {
         setStreamBuffer((p) => p + mock[i]);
-        await new Promise((r) => setTimeout(r, 15));
+        await new Promise((r) => setTimeout(r, 12));
       }
       addMessage({ role: "assistant", content: mock });
       setStreamBuffer("");
@@ -50,55 +51,46 @@ export default function AIChat() {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <h2 style={{ fontSize: 16, margin: "0 0 12px 0" }}>AI 助手</h2>
+    <div className="panel" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 136px)" }}>
+      <h2 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Sparkles size={18} style={{ color: "var(--purple)" }} /> AI 助手
+      </h2>
 
-      <div style={{ flex: 1, overflowY: "auto", paddingRight: 8, marginBottom: 12 }}>
+      <div style={{ flex: 1, overflowY: "auto", marginBottom: 14 }}>
         {messages.map((m, i) => (
-          <div key={i} style={{
-            marginBottom: 12, padding: "10px 14px", borderRadius: 8,
-            background: m.role === "user" ? "var(--accent)" : "var(--bg-tertiary)",
-            maxWidth: "90%", marginLeft: m.role === "user" ? "auto" : 0,
-            fontSize: 13, lineHeight: 1.6,
-          }}>
-            {m.role === "assistant" ? <ReactMarkdown>{m.content}</ReactMarkdown> : m.content}
+          <div key={i} className={`chat-msg ${m.role}`}>
+            <ReactMarkdown>{m.content}</ReactMarkdown>
           </div>
         ))}
         {isStreaming && streamBuffer && (
-          <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 8, background: "var(--bg-tertiary)", fontSize: 13 }}>
+          <div className="chat-msg assistant">
             <ReactMarkdown>{streamBuffer}</ReactMarkdown>
-            <span style={{ color: "var(--accent)" }}>▊</span>
+            <span style={{ color: "var(--accent)", animation: "pulse 1s infinite" }}>▊</span>
           </div>
         )}
         <div ref={endRef} />
       </div>
 
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
         {shortcuts.map((s) => (
-          <button key={s.label}
-            onClick={() => { setInput(s.cmd); }}
-            style={{ padding: "4px 10px", background: "var(--bg-tertiary)", border: "1px solid var(--border)", borderRadius: 12, color: "var(--text-secondary)", fontSize: 11, cursor: "pointer" }}>
+          <button key={s.label} className="btn btn-ghost"
+            onClick={() => setInput(s.cmd)}
+            style={{ fontSize: 11.5, padding: "5px 12px", borderRadius: 100 }}>
             {s.label}
           </button>
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
+      <div style={{ display: "flex", gap: 10 }}>
+        <input className="input"
           value={input} onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
           placeholder="描述您的光学设计需求..."
-          style={{
-            flex: 1, padding: "10px 14px", background: "var(--bg-tertiary)", border: "1px solid var(--border)",
-            borderRadius: 8, color: "var(--text-primary)", fontSize: 13, outline: "none",
-          }}
+          style={{ flex: 1, padding: "11px 15px", fontSize: 13.5 }}
         />
-        <button onClick={send} disabled={isStreaming}
-          style={{
-            padding: "10px 20px", background: "var(--accent)", border: "none", borderRadius: 8,
-            color: "#fff", cursor: isStreaming ? "not-allowed" : "pointer", opacity: isStreaming ? 0.5 : 1, fontSize: 13,
-          }}>
-          发送
+        <button className="btn btn-primary" onClick={send} disabled={isStreaming}
+          style={{ padding: "11px 22px", opacity: isStreaming ? 0.5 : 1 }}>
+          <Send size={15} /> 发送
         </button>
       </div>
     </div>
