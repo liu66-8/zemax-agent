@@ -99,7 +99,6 @@ export default function Sidebar() {
           <div style={{ width: 26, height: 26, background: "linear-gradient(135deg, var(--accent), var(--purple))", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 13 }}>Z</div>
           <div>
             <div style={{ fontWeight: 600, fontSize: 14 }}>Zemax Agent</div>
-            <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>光学工程工作台</div>
           </div>
         </div>
       </div>
