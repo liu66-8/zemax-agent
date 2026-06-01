@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[924],{924:function(e,n,a){async function p(e,n={},a){return window.__TAURI_INTERNALS__.invoke(e,n,a)}a.d(n,{invoke:function(){return p}}),"function"==typeof SuppressedError&&SuppressedError,new WeakMap,new WeakMap,new WeakMap,new WeakMap,new WeakMap}}]);

@@ -24,12 +24,10 @@ export default function SettingsModal() {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <div>
-            <label style={{ fontSize: 11, color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>模型</label>
-            <select className="input" value={settings.llmModel}
-              onChange={(e) => update({ llmModel: e.target.value })}>
-              <option value="deepseek-chat">DeepSeek V3 (Chat)</option>
-              <option value="deepseek-reasoner">DeepSeek R1 (Reasoner)</option>
-            </select>
+            <label style={{ fontSize: 11, color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>模型名称</label>
+            <input className="input" value={settings.llmModel}
+              placeholder="deepseek-chat"
+              onChange={(e) => update({ llmModel: e.target.value })} />
           </div>
           <div>
             <label style={{ fontSize: 11, color: "var(--text-tertiary)", display: "block", marginBottom: 4 }}>API Base</label>

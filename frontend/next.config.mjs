@@ -4,6 +4,7 @@ const nextConfig = {
   distDir: "out",
   images: { unoptimized: true },
   transpilePackages: ["lucide-react"],
+  trailingSlash: true,
 };
 
 export default nextConfig;
