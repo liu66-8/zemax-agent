@@ -5,10 +5,10 @@ export default function DesignControl() {
   const { surfaces, efl, fNumber, totalTrack, updateSurface, undo, redo } = useDesignStore();
 
   const quickActions = [
-    { label: "Ray Trace", cmd: "system.get_system_info" },
-    { label: "Quick MTF", cmd: "analysis.get_mtf" },
-    { label: "Spot Diagram", cmd: "analysis.get_spot" },
-    { label: "Layout View", cmd: "analysis.get_layout" },
+    { label: "光线追迹", cmd: "system.get_system_info" },
+    { label: "MTF 分析", cmd: "analysis.get_mtf" },
+    { label: "点列图", cmd: "analysis.get_spot" },
+    { label: "光路布局", cmd: "analysis.get_layout" },
   ];
 
   const runAction = async (cmd: string) => {
@@ -18,27 +18,27 @@ export default function DesignControl() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <h2 style={{ fontSize: 16, margin: 0 }}>Design Control</h2>
+        <h2 style={{ fontSize: 16, margin: 0 }}>设计控制</h2>
         <div style={{ display: "flex", gap: 4 }}>
-          <button onClick={undo} style={smallBtn} title="Undo">↩</button>
-          <button onClick={redo} style={smallBtn} title="Redo">↪</button>
+          <button onClick={undo} style={smallBtn} title="撤销">↩</button>
+          <button onClick={redo} style={smallBtn} title="重做">↪</button>
         </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
-        <InfoCard label="EFL" value={`${efl.toFixed(1)} mm`} />
-        <InfoCard label="F/#" value={fNumber.toFixed(1)} />
-        <InfoCard label="Track" value={`${totalTrack.toFixed(1)} mm`} />
+        <InfoCard label="有效焦距" value={`${efl.toFixed(1)} mm`} />
+        <InfoCard label="F 数" value={fNumber.toFixed(1)} />
+        <InfoCard label="总长度" value={`${totalTrack.toFixed(1)} mm`} />
       </div>
 
       {surfaces.length === 0 ? (
-        <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>No lens data loaded.</p>
+        <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>暂无镜头数据，请先加载设计文件。</p>
       ) : (
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                {["#", "Type", "Radius", "Thickness", "Glass", "Semi-Dia"].map((h) => (
+                {["#", "面型", "曲率半径", "厚度", "玻璃", "半口径"].map((h) => (
                   <th key={h} style={thStyle}>{h}</th>
                 ))}
               </tr>

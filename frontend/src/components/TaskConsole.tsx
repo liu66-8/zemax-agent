@@ -1,17 +1,21 @@
 import { useTaskStore } from "@/stores";
 
+const STATUS_CN: Record<string, string> = {
+  pending: "等待中", running: "执行中", completed: "已完成", failed: "失败", cancelled: "已取消",
+};
+
 export default function TaskConsole() {
   const { tasks, queueSize } = useTaskStore();
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <h2 style={{ fontSize: 16, margin: 0 }}>Task Console</h2>
-        <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Queue: {queueSize}</span>
+        <h2 style={{ fontSize: 16, margin: 0 }}>任务控制台</h2>
+        <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>队列: {queueSize}</span>
       </div>
 
       {tasks.length === 0 ? (
-        <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>No tasks yet. Tasks appear when you run design operations.</p>
+        <p style={{ color: "var(--text-secondary)", fontSize: 13 }}>暂无任务。执行设计操作时将在此显示任务进度。</p>
       ) : (
         <div>
           {tasks.map((t) => (
@@ -49,7 +53,7 @@ function StatusBadge({ status }: { status: string }) {
       background: (colors[status] || "#64748b") + "20",
       color: colors[status] || "#64748b",
     }}>
-      {status}
+      {STATUS_CN[status] || status}
     </span>
   );
 }

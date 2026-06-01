@@ -13,7 +13,7 @@ export default function AIChat() {
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streamBuffer]);
   useEffect(() => {
     if (!messages.length) {
-      addMessage({ role: "system", content: "Welcome to Zemax Agent. Describe your optical design task." });
+      addMessage({ role: "system", content: "欢迎使用 Zemax Agent 光学工程工作台。请描述您的光学设计任务。" });
     }
   }, []);
 
@@ -29,9 +29,9 @@ export default function AIChat() {
       const data = await invokeIPC("agent_chat", { message: userMsg }) as any;
       if (data?.content) addMessage({ role: "assistant", content: data.content });
     } catch {
-      const mock = `Based on your request, I'll help with the optical design task.\n\n` +
-        `**Plan:**\n1. Set up the initial lens structure\n2. Configure fields and wavelengths\n3. Run optimization\n4. Analyze performance\n\n` +
-        `Shall I proceed with this approach?`;
+      const mock = `根据您的需求，我将协助完成光学设计任务。\n\n` +
+        `**计划：**\n1. 建立初始镜头结构\n2. 配置视场和波长\n3. 执行优化\n4. 分析性能\n\n` +
+        `是否按此方案进行？`;
       for (let i = 0; i < mock.length; i++) {
         setStreamBuffer((p) => p + mock[i]);
         await new Promise((r) => setTimeout(r, 15));
@@ -43,15 +43,15 @@ export default function AIChat() {
   };
 
   const shortcuts = [
-    { label: "Analyze MTF", cmd: "Run MTF analysis and report the results" },
-    { label: "Create Triplet", cmd: "Create a Cooke triplet with 100mm focal length at f/4" },
-    { label: "Optimize", cmd: "Optimize the current design for best MTF" },
-    { label: "Diagnose", cmd: "Analyze aberrations and suggest corrections" },
+    { label: "MTF 分析", cmd: "运行 MTF 分析并报告结果" },
+    { label: "创建 Triplet", cmd: "创建一个焦距 100mm、F/4 的 Cooke 三片式镜头" },
+    { label: "优化设计", cmd: "优化当前设计以获得最佳 MTF 性能" },
+    { label: "像差诊断", cmd: "分析当前设计的像差并提供校正建议" },
   ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <h2 style={{ fontSize: 16, margin: "0 0 12px 0" }}>AI Assistant</h2>
+      <h2 style={{ fontSize: 16, margin: "0 0 12px 0" }}>AI 助手</h2>
 
       <div style={{ flex: 1, overflowY: "auto", paddingRight: 8, marginBottom: 12 }}>
         {messages.map((m, i) => (
@@ -87,7 +87,7 @@ export default function AIChat() {
         <input
           value={input} onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
-          placeholder="Describe your optical design task..."
+          placeholder="描述您的光学设计需求..."
           style={{
             flex: 1, padding: "10px 14px", background: "var(--bg-tertiary)", border: "1px solid var(--border)",
             borderRadius: 8, color: "var(--text-primary)", fontSize: 13, outline: "none",
@@ -98,7 +98,7 @@ export default function AIChat() {
             padding: "10px 20px", background: "var(--accent)", border: "none", borderRadius: 8,
             color: "#fff", cursor: isStreaming ? "not-allowed" : "pointer", opacity: isStreaming ? 0.5 : 1, fontSize: 13,
           }}>
-          Send
+          发送
         </button>
       </div>
     </div>
