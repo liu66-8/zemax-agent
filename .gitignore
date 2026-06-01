@@ -1,52 +1,64 @@
-# Python
+# ── Python ──
 __pycache__/
 *.py[cod]
-*.pyc
+*.egg-info/
+dist/
+build/
 *.so
-*.egg
+*.pyd
 
-# Virtual environments
+# ── Virtual environments ──
 .venv/
 venv/
 env/
 .env
 
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-
-# Type checking
+# ── Type checking / Linting ──
 .mypy_cache/
 .ruff_cache/
+.pytest_cache/
 
-# Testing
+# ── Testing ──
 .pytest_cache/
 .coverage
 htmlcov/
+coverage/
+*.cover
 
-# IDE
+# ── IDE / Editor ──
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+*.iml
 
-# OS
+# ── OS ──
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Project-specific
+# ── Project-specific ──
 *.zmx
-checkpoints/
+*.log
 logs/
+checkpoints/
 reports/
 workspace/
 .trae/
+config.yaml
 
-# Node/Frontend
+# ── Node / Next.js Frontend ──
 frontend/node_modules/
+frontend/.next/
+frontend/out/
 frontend/dist/
 frontend/.vite/
 
-# Rust/Tauri
+# ── Rust / Tauri ──
 frontend/src-tauri/target/
+
+# ── Misc ──
+*.bak
+*.orig
+*.tmp
