@@ -79,11 +79,12 @@ export interface AppSettings {
   zosMode: "standalone" | "extension"; zosTimeout: number;
   qdrantUrl: string;
   llmProvider: string; llmModel: string; llmApiBase: string; llmApiKey: string;
-  theme: "dark" | "light";
+  theme: "dark" | "light"; workspaceDir: string;
 }
 interface SettingsStore {
   settings: AppSettings; showSettings: boolean;
   update: (s: Partial<AppSettings>) => void; setShowSettings: (v: boolean) => void;
+  fetchSettings: () => Promise<void>;
 }
 export const useSettingsStore = create<SettingsStore>((set) => ({
   settings: {
@@ -91,12 +92,34 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
     qdrantUrl: "http://localhost:6333",
     llmProvider: "deepseek", llmModel: "deepseek-v4-flash",
     llmApiBase: "https://api.deepseek.com/v1",
-    llmApiKey: "sk-3f2d53d6a4174a03894b15de3d6386fb",
-    theme: "dark",
+    llmApiKey: "",
+    theme: "dark", workspaceDir: "./workspace",
   },
   showSettings: false,
   update: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
   setShowSettings: (v) => set({ showSettings: v }),
+  fetchSettings: async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:9876/api/settings");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.llmApiKey) {
+        set((st) => ({
+          settings: {
+            ...st.settings,
+            llmApiKey: data.llmApiKey,
+            llmApiBase: data.llmApiBase || st.settings.llmApiBase,
+            llmModel: data.llmModel || st.settings.llmModel,
+            llmProvider: data.llmProvider || st.settings.llmProvider,
+            zosMode: data.zosMode || st.settings.zosMode,
+            zosTimeout: data.zosTimeout || st.settings.zosTimeout,
+            qdrantUrl: data.qdrantUrl || st.settings.qdrantUrl,
+            workspaceDir: data.workspaceDir || st.settings.workspaceDir,
+          },
+        }));
+      }
+    } catch { /* backend not ready */ }
+  },
 }));
 
 interface Message { role: string; content: string; }

@@ -19,6 +19,7 @@ export default function Sidebar() {
   const { recentFiles } = useFileStore();
   const { setLensData } = useDesignStore();
   const { open, close } = useModal();
+  const { fetchSettings } = useSettingsStore();
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
 
@@ -27,7 +28,7 @@ export default function Sidebar() {
     ipc.listProjects().then((data: any) => {
       if (Array.isArray(data) && data.length > 0) setProjects(data);
     }).catch(() => {});
-    // Auto-connect to ZOS
+    fetchSettings();
     connectZOS();
     connectQdrant();
   }, []);

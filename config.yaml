@@ -14,7 +14,7 @@ zos:
 # 大语言模型配置
 llm:
   provider: openai               # openai | azure | local
-  api_key: ""                    # 建议通过环境变量设置
+  api_key: "sk-a82124ce804e4c86a487e784572648e7"                    # 建议通过环境变量设置
   api_base: https://api.openai.com/v1
   model: gpt-4
   max_tokens: 4096

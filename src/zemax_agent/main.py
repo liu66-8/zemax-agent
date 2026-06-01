@@ -11,6 +11,9 @@ from zemax_agent.core import load_config, setup_logging, get_config
 
 logger = logging.getLogger(__name__)
 
+# ── Config & State ──
+_CONFIG = None
+
 # ── ZOS-API initialization ──
 _ZOS_INITIALIZED = False
 _ZOS_DIR = ""
@@ -326,6 +329,19 @@ def _create_design(conn, design_type: str, params: dict) -> dict:
         set_surface_data(conn, 6, surface_type="Standard", radius=-1.2*fl, thickness=0.42*fl, glass="")
 
     summary = get_lens_data_summary(conn)
+
+    # Auto-save ZMX to workspace
+    try:
+        import os, time
+        from zemax_agent.zos.api_system import save_zmx
+        ws = os.path.abspath(_CONFIG.project.workspace_dir) if _CONFIG else os.path.abspath("./workspace")
+        os.makedirs(ws, exist_ok=True)
+        fname = f"doublet_{design_type}_{int(time.time())}.zmx"
+        save_zmx(conn, os.path.join(ws, fname))
+        logger.info("Auto-saved ZMX: %s", fname)
+    except Exception as e:
+        logger.warning("Auto-save ZMX failed: %s", e)
+
     return {"success": True, "data": summary.model_dump() if hasattr(summary, 'model_dump') else str(summary), "source": "zos-api"}
 
 
@@ -340,6 +356,21 @@ class APIHandler(BaseHTTPRequestHandler):
             self._json({"connected": False, "message": "Qdrant not running"})
         elif self.path == "/api/zos/tools":
             self._json(ZOS_TOOLS)
+        elif self.path == "/api/settings":
+            cfg = _CONFIG
+            if cfg:
+                self._json({
+                    "llmApiKey": cfg.llm.api_key,
+                    "llmApiBase": cfg.llm.api_base,
+                    "llmModel": cfg.llm.model,
+                    "llmProvider": cfg.llm.provider,
+                    "zosMode": cfg.zos.connection_mode,
+                    "zosTimeout": cfg.zos.connection_timeout,
+                    "qdrantUrl": cfg.storage.qdrant_url,
+                    "workspaceDir": cfg.project.workspace_dir,
+                })
+            else:
+                self._json({"error": "config not loaded"}, 503)
         else:
             self.send_error(404)
 
@@ -391,9 +422,11 @@ def run_server(port: int = 9876):
 
 
 def main():
+    global _CONFIG
     project_root = Path(__file__).parent.parent.parent
     config_path = project_root / "config.yaml"
-    config = load_config(str(config_path))
+    _CONFIG = load_config(str(config_path))
+    config = _CONFIG
     logger = setup_logging(level=config.logging.level, log_file=config.logging.file, fmt=config.logging.format, datefmt=config.logging.date_format)
     logger.info("Zemax Agent starting...")
     logger.info("LLM: %s / %s", config.llm.provider, config.llm.model)
