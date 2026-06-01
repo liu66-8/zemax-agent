@@ -8,6 +8,9 @@ from zemax_agent.core.task_scheduler import TaskScheduler, Task, TaskType, TaskS
 from zemax_agent.core.health import HealthMonitor, HealthStatus, ComponentType, SystemHealth
 from zemax_agent.core.design_templates import DesignTemplate, TemplateParameter, TemplateLibrary, PRESET_TEMPLATES
 from zemax_agent.core.version_manager import VersionManager, DesignSnapshot, PerformanceSnapshot
+from zemax_agent.core.prompts import PROMPT_TEMPLATES, get_prompt, get_system_prompt
+from zemax_agent.core.agent import LangGraphAgent, AgentState, ActionPlan, ActionStep, PerformanceSnapshot as AgentPerfSnapshot
+from zemax_agent.core.ipc import IPCRouter, IPCMessage
 
 __all__ = [
     "AppConfig", "ZOSConfig", "LLMConfig", "StorageConfig", "ProjectConfig",
@@ -21,4 +24,7 @@ __all__ = [
     "HealthMonitor", "HealthStatus", "ComponentType", "SystemHealth",
     "DesignTemplate", "TemplateParameter", "TemplateLibrary", "PRESET_TEMPLATES",
     "VersionManager", "DesignSnapshot", "PerformanceSnapshot",
+    "PROMPT_TEMPLATES", "get_prompt", "get_system_prompt",
+    "LangGraphAgent", "AgentState", "ActionPlan", "ActionStep", "AgentPerfSnapshot",
+    "IPCRouter", "IPCMessage",
 ]
