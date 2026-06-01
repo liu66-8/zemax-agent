@@ -37,28 +37,24 @@ export const useConnectionStore = create<ConnectionStore>((set) => ({
   setPython: (s) => set((st) => ({ python: { ...st.python, ...s } })),
   connectZOS: async () => {
     set((st) => ({ zos: { ...st.zos, status: "connecting", message: "连接中..." } }));
-    const start = performance.now();
     try {
       const { createTauriIPC } = await import("@/app/services/api");
       const ipc = createTauriIPC();
-      const ok = await ipc.checkZOSConnection();
-      const latency = Math.round(performance.now() - start);
-      set((st) => ({ zos: { ...st.zos, status: ok ? "connected" : "error", message: ok ? "已连接" : "连接失败", latencyMs: ok ? latency : 0 } }));
+      const result = await ipc.checkZOSConnection();
+      set((st) => ({ zos: { ...st.zos, status: result.connected ? "connected" : "disconnected", message: result.message, latencyMs: result.latencyMs } }));
     } catch {
-      set((st) => ({ zos: { ...st.zos, status: "error", message: "连接失败", latencyMs: 0 } }));
+      set((st) => ({ zos: { ...st.zos, status: "error", message: "后端未启动", latencyMs: 0 } }));
     }
   },
   connectQdrant: async () => {
     set((st) => ({ qdrant: { ...st.qdrant, status: "connecting", message: "连接中..." } }));
-    const start = performance.now();
     try {
       const { createTauriIPC } = await import("@/app/services/api");
       const ipc = createTauriIPC();
-      const ok = await ipc.checkQdrantConnection();
-      const latency = Math.round(performance.now() - start);
-      set((st) => ({ qdrant: { ...st.qdrant, status: ok ? "connected" : "error", message: ok ? "已连接" : "连接失败", latencyMs: ok ? latency : 0 } }));
+      const result = await ipc.checkQdrantConnection();
+      set((st) => ({ qdrant: { ...st.qdrant, status: result.connected ? "connected" : "disconnected", message: result.message, latencyMs: result.latencyMs } }));
     } catch {
-      set((st) => ({ qdrant: { ...st.qdrant, status: "error", message: "连接失败", latencyMs: 0 } }));
+      set((st) => ({ qdrant: { ...st.qdrant, status: "error", message: "后端未启动", latencyMs: 0 } }));
     }
   },
   disconnectZOS: () => set((st) => ({ zos: { ...st.zos, status: "disconnected", message: "已断开", latencyMs: 0 } })),
@@ -93,9 +89,9 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   settings: {
     zosMode: "standalone", zosTimeout: 30,
     qdrantUrl: "http://localhost:6333",
-    llmProvider: "deepseek", llmModel: "deepseek-chat",
+    llmProvider: "deepseek", llmModel: "deepseek-v4-flash",
     llmApiBase: "https://api.deepseek.com/v1",
-    llmApiKey: "",
+    llmApiKey: "sk-3f2d53d6a4174a03894b15de3d6386fb",
     theme: "dark",
   },
   showSettings: false,

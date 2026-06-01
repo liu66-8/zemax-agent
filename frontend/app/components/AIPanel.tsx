@@ -120,10 +120,11 @@ export default function AIPanel() {
           ))}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <input className="input" value={input} onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
-            placeholder={settings.llmApiKey ? "描述光学设计需求..." : "请先在设置中配置 API Key"}
-            style={{ flex: 1, padding: "8px 12px", fontSize: 12.5 }} />
+          <textarea className="input" value={input} onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+            placeholder={settings.llmApiKey ? "描述光学设计需求... (Enter 发送, Shift+Enter 换行)" : "请先在设置中配置 API Key"}
+            rows={2}
+            style={{ flex: 1, padding: "8px 12px", fontSize: 12.5, resize: "none" }} />
           {isStreaming ? (
             <button className="btn btn-secondary btn-sm" onClick={stop}>
               <StopCircle size={13} />
