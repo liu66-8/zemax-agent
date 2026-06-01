@@ -409,7 +409,7 @@ class APIHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
-        self.wfile.write(json.dumps(data, ensure_ascii=False).encode())
+        self.wfile.write(json.dumps(data, ensure_ascii=False, allow_nan=False).encode())
 
     def log_message(self, format, *args):
         pass

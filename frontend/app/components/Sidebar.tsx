@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { FolderOpen, Plus, Clock, FileText, Zap, Database, Loader2 } from "lucide-react";
-import { useProjectStore, useTaskStore, useConnectionStore, useFileStore, useDesignStore, type ProjectItem, type SurfaceData } from "@/app/stores";
+import { useProjectStore, useTaskStore, useConnectionStore, useFileStore, useDesignStore, useSettingsStore, type ProjectItem, type SurfaceData } from "@/app/stores";
 import { useModal } from "@/app/components/Modal";
 import { createTauriIPC } from "@/app/services/api";
 import { useState } from "react";

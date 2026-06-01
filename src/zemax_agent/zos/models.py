@@ -9,8 +9,8 @@ class SurfaceData(BaseModel):
     index: int
     surf_type: str = "Standard"
     comment: str = ""
-    radius: float = 0.0
-    thickness: float = 0.0
+    radius: Optional[float] = 0.0
+    thickness: Optional[float] = 0.0
     glass: str = ""
     semi_diameter: float = 0.0
     conic: float = 0.0

@@ -16,12 +16,14 @@ def _get_lde(conn: ZOSConnection) -> Any:
 def get_surface_data(conn: ZOSConnection, surface_index: int) -> SurfaceData:
     lde = _get_lde(conn)
     surf = lde.GetSurfaceAt(surface_index)
+    r = float(surf.Radius)
+    t = float(surf.Thickness)
     return SurfaceData(
         index=surface_index,
         surf_type=str(surf.TypeName),
         comment=str(surf.Comment),
-        radius=float(surf.Radius),
-        thickness=float(surf.Thickness),
+        radius=None if r == float('inf') or r != r else r,
+        thickness=None if t == float('inf') or t != t else t,
         glass=str(surf.Material),
         semi_diameter=float(surf.SemiDiameter),
         conic=float(surf.Conic),
