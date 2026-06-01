@@ -11,6 +11,34 @@ from zemax_agent.core import load_config, setup_logging, get_config
 
 logger = logging.getLogger(__name__)
 
+# ── ZOS-API initialization ──
+_ZOS_INITIALIZED = False
+_ZOS_DIR = ""
+
+
+def _init_zos_api() -> bool:
+    global _ZOS_INITIALIZED, _ZOS_DIR
+    if _ZOS_INITIALIZED:
+        return True
+    try:
+        import clr
+        # Try the known installation path
+        candidate = r"C:\Program Files\ANSYS Inc\Ansys Zemax OpticStudio 2024 R1.00\ZOS-API\Libraries"
+        import os
+        if not os.path.isdir(candidate):
+            return False
+        sys.path.append(candidate)
+        clr.AddReference("ZOSAPI_NetHelper")
+        from ZOSAPI_NetHelper import ZOSAPI_Initializer
+        _ZOS_DIR = ZOSAPI_Initializer.GetZemaxDirectory()
+        ZOSAPI_Initializer.Initialize()
+        _ZOS_INITIALIZED = True
+        logger.info("ZOS-API initialized. Zemax dir: %s", _ZOS_DIR)
+        return True
+    except Exception as e:
+        logger.debug("ZOS-API init failed: %s", e)
+        return False
+
 # ── ZOS tool definitions (OpenAI function-calling format) ──
 ZOS_TOOLS = [
     {
@@ -137,16 +165,18 @@ ZOS_TOOLS = [
 
 # ── Tool execution handler ──
 def execute_tool(tool_name: str, params: dict) -> dict:
+    if not _init_zos_api():
+        return {"success": False, "error": "Zemax OpticStudio 2024 R1 未检测到。请确认 ZOS-API 已安装。", "source": "zos-api"}
     try:
         from zemax_agent.zos import ZOSDispatcher
         dispatcher = ZOSDispatcher.get_instance()
         if not dispatcher.is_connected:
-            dispatcher.connect(timeout=10)
+            dispatcher.connect(timeout=15)
         result = dispatcher.submit_and_wait(tool_name, params=params, timeout=30)
         return {"success": True, "data": result, "source": "zos-api"}
     except Exception as e:
         logger.warning("ZOS tool failed: %s - %s", tool_name, e)
-        return {"success": False, "error": f"Zemax OpticStudio 未连接或执行失败: {str(e)}", "source": "zos-api"}
+        return {"success": False, "error": f"执行失败: {str(e)}", "source": "zos-api"}
 
 
 class APIHandler(BaseHTTPRequestHandler):
@@ -191,14 +221,7 @@ class APIHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def _check_zos(self) -> bool:
-        try:
-            import clr
-            clr.AddReference("ZOSAPI_NetHelper")
-            import ZOSAPI_NetHelper
-            path = ZOSAPI_NetHelper.ZOSAPI_NetHelper.GetZOSRootPath()
-            return path is not None and path != ""
-        except Exception:
-            return False
+        return _init_zos_api()
 
     def _json(self, data, status=200):
         self.send_response(status)

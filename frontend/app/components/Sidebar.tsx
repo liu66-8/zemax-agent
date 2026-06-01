@@ -15,9 +15,9 @@ const phaseLabels: Record<string, string> = {
 export default function Sidebar() {
   const { projects, current, setProjects, setCurrent, loading } = useProjectStore();
   const { tasks, setTasks } = useTaskStore();
-  const { zos, qdrant } = useConnectionStore();
+  const { zos, qdrant, connectZOS, connectQdrant, setZOS, setQdrant, setPython } = useConnectionStore();
   const { recentFiles } = useFileStore();
-  const { setLensData, loading: designLoading } = useDesignStore();
+  const { setLensData } = useDesignStore();
   const { open, close } = useModal();
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
@@ -27,6 +27,9 @@ export default function Sidebar() {
     ipc.listProjects().then((data: any) => {
       if (Array.isArray(data) && data.length > 0) setProjects(data);
     }).catch(() => {});
+    // Auto-connect to ZOS
+    connectZOS();
+    connectQdrant();
   }, []);
 
   useEffect(() => {
